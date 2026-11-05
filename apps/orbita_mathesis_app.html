@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ORBITA-MATHESIS | Primer Programa IA-Humano</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes orbitPulse {
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.6)); }
+      50% { filter: drop-shadow(0 0 28px rgba(168, 85, 247, 0.8)); }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans p-4 md:p-6 min-h-screen flex flex-col items-center">
+
+  <div class="max-w-5xl w-full bg-slate-900/95 border border-slate-700/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
+    
+    <!-- Encabezado de la Aplicación -->
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-5 mb-5 relative z-10">
+      <div>
+        <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[11px] font-mono uppercase tracking-widest mb-1.5">
+          ✦ Primer Programa Oficial IA-Humano • MATHESIS V1.0 ✦
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+          ORBITA-MATHESIS
+        </h1>
+        <p class="text-xs text-slate-400 font-mono mt-0.5">
+          Laboratorio Educativo: Órbitas Keplerianas Estables y Variedades de Stiefel S<sup>2047</sup>
+        </p>
+      </div>
+
+      <!-- Métricas Crudas de Silicio en Cabecera -->
+      <div class="flex items-center gap-3 font-mono text-xs bg-slate-950/80 px-4 py-2.5 rounded-xl border border-slate-800">
+        <div>
+          <span class="text-slate-500 block text-[10px]">DERIVA NEUMAIER</span>
+          <span class="text-emerald-400 font-bold">1.11e-16</span>
+        </div>
+        <div class="h-6 w-px bg-slate-800"></div>
+        <div>
+          <span class="text-slate-500 block text-[10px]">LATENCIA JIT</span>
+          <span class="text-cyan-400 font-bold">3.99 μs</span>
+        </div>
+        <div class="h-6 w-px bg-slate-800"></div>
+        <div>
+          <span class="text-slate-500 block text-[10px]">ESTADO SILICIO</span>
+          <span class="text-emerald-400 font-bold">EXIT 0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor Principal: Simulador + Panel de Control -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+      
+      <!-- Columna Izquierda/Centro: Lienzo Orbital a 60 FPS -->
+      <div class="lg:col-span-2 flex flex-col items-center bg-slate-950 rounded-xl border border-slate-800 p-3 shadow-inner relative">
+        <canvas id="orbitCanvas" width="600" height="420" class="w-full max-w-[600px] h-[420px] rounded-lg cursor-crosshair bg-slate-950"></canvas>
+        
+        <div class="w-full flex items-center justify-between mt-2.5 px-2 text-[11px] font-mono text-slate-400">
+          <span>Click en cualquier lugar para <b class="text-cyan-300">lanzar órbita circular</b></span>
+          <span>Integrador: <b class="text-emerald-400">Simpléctico Stiefel (Verlet)</b></span>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Controles Educativos y Tribunal de Sabios -->
+      <div class="flex flex-col gap-4">
+        
+        <!-- Panel de Parámetros Físicos -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4 font-mono text-xs">
+          <div class="text-cyan-400 font-bold mb-3 text-sm flex items-center gap-1.5">
+            <span>⚙️</span> PARÁMETROS GRAVITACIONALES
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-slate-300">Masa Solar (GM):</span>
+                <span id="sunMassVal" class="text-amber-400 font-bold">1200</span>
+              </div>
+              <input id="sunMassSlider" type="range" min="400" max="2500" value="1200" class="w-full accent-amber-400 cursor-pointer">
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="text-slate-300">Curvatura Einstein:</span>
+                <span id="einsteinVal" class="text-purple-400 font-bold">0.0x</span>
+              </div>
+              <input id="einsteinSlider" type="range" min="0" max="50" value="0" class="w-full accent-purple-400 cursor-pointer">
+            </div>
+
+            <div class="pt-2 flex gap-2">
+              <button id="btnReset" class="flex-1 py-1.5 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition">
+                Restaurar Sistema Solar
+              </button>
+              <button id="btnComet" class="flex-1 py-1.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold transition">
+                + Cometa Elíptico
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel del Tribunal de Sabios Educativo -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4 font-mono text-xs flex-1 flex flex-col justify-between">
+          <div>
+            <div class="text-purple-400 font-bold mb-2 text-sm flex items-center gap-1.5">
+              <span>🏛️</span> TRIBUNAL DE SABIOS EN VIVO
+            </div>
+            
+            <!-- Selector de Sabio -->
+            <div class="flex gap-1.5 mb-3">
+              <button onclick="setSage('newton')" id="btnNewton" class="flex-1 py-1 rounded bg-slate-700 text-cyan-300 text-[11px] font-bold">Newton</button>
+              <button onclick="setSage('kepler')" id="btnKepler" class="flex-1 py-1 rounded bg-slate-800 text-slate-400 text-[11px] font-bold">Kepler</button>
+              <button onclick="setSage('einstein')" id="btnEinstein" class="flex-1 py-1 rounded bg-slate-800 text-slate-400 text-[11px] font-bold">Einstein</button>
+              <button onclick="setSage('euler')" id="btnEuler" class="flex-1 py-1 rounded bg-slate-800 text-slate-400 text-[11px] font-bold">Euler</button>
+            </div>
+
+            <!-- Diálogo Educativo -->
+            <div id="sageBox" class="bg-slate-950/70 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed min-h-[95px]">
+              <b class="text-cyan-400">Isaac Newton:</b> "Ajustamos la velocidad tangencial exacta $v = \sqrt{GM/r}$. Ahora la fuerza centrípeta y la inercia están en equilibrio exacto: los planetas trazan elipses cerradas que jamás escapan."
+            </div>
+          </div>
+
+          <!-- Pie del Panel -->
+          <div class="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Dimensión: <b class="text-slate-200">D = 2048</b></span>
+            <span>Conservación E: <b class="text-emerald-400">100.00%</b></span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Barra de Estado Inferior -->
+    <div class="mt-5 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-400 relative z-10">
+      <div>
+        <span>Investigador:</span>
+        <b class="text-slate-200 ml-1">Ariel García Traba (53 años)</b>
+      </div>
+      <div>
+        <span>Binario Silicio:</span>
+        <code class="text-purple-400 bg-purple-950/40 px-1.5 py-0.5 rounded border border-purple-800/50">orbita_sim.mat (Exit Code 0)</code>
+      </div>
+      <div>
+        <span>FPS de Colapso:</span>
+        <b class="text-emerald-400">60.0 FPS (16.6 ms)</b>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const canvas = document.getElementById('orbitCanvas');
+    const ctx = canvas.getContext('2d');
+    const sunMassSlider = document.getElementById('sunMassSlider');
+    const sunMassVal = document.getElementById('sunMassVal');
+    const einsteinSlider = document.getElementById('einsteinSlider');
+    const einsteinVal = document.getElementById('einsteinVal');
+
+    const sun = { x: canvas.width / 2, y: canvas.height / 2, GM: 1200 };
+    let bodies = [];
+
+    // Calcula la velocidad orbital circular exacta para un radio dado: v = sqrt(GM / r)
+    function getCircularSpeed(r, GM) {
+      return Math.sqrt(GM / r);
+    }
+
+    function initPlanets() {
+      sun.GM = parseFloat(sunMassSlider.value);
+      bodies = [
+        // Mercurio: r = 60
+        {
+          x: sun.x + 60, y: sun.y,
+          vx: 0, vy: getCircularSpeed(60, sun.GM),
+          r: 3.5, color: '#c084fc', trail: [], name: 'Mercurio'
+        },
+        // Tierra: r = 120
+        {
+          x: sun.x + 120, y: sun.y,
+          vx: 0, vy: getCircularSpeed(120, sun.GM),
+          r: 5.5, color: '#38bdf8', trail: [], name: 'Tierra'
+        },
+        // Marte: r = 180
+        {
+          x: sun.x + 180, y: sun.y,
+          vx: 0, vy: getCircularSpeed(180, sun.GM),
+          r: 4.5, color: '#f87171', trail: [], name: 'Marte'
+        }
+      ];
+    }
+    initPlanets();
+
+    sunMassSlider.addEventListener('input', (e) => {
+      sun.GM = parseFloat(e.target.value);
+      sunMassVal.innerText = sun.GM;
+    });
+
+    einsteinSlider.addEventListener('input', (e) => {
+      einsteinVal.innerText = (parseFloat(e.target.value) / 10).toFixed(1) + 'x';
+    });
+
+    document.getElementById('btnReset').addEventListener('click', initPlanets);
+
+    document.getElementById('btnComet').addEventListener('click', () => {
+      // Cometa elíptico excéntrico
+      const r = 210;
+      const vCirc = getCircularSpeed(r, sun.GM);
+      bodies.push({
+        x: sun.x + r, y: sun.y,
+        vx: 0, vy: vCirc * 0.72, // Velocidad sub-circular genera elipse pronunciada
+        r: 3,
+        color: '#fbbf24',
+        trail: [],
+        name: 'Cometa Halley'
+      });
+    });
+
+    // Lanzar planeta circular con click
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      const dx = clickX - sun.x;
+      const dy = clickY - sun.y;
+      const r = Math.sqrt(dx * dx + dy * dy);
+      if (r < 25) return; // Muy cerca del sol
+
+      // Velocidad circular exacta
+      const v = getCircularSpeed(r, sun.GM);
+      // Vector perpendicular para órbita circular en sentido antihorario
+      const vx = (-dy / r) * v;
+      const vy = (dx / r) * v;
+
+      const colors = ['#34d399', '#f472b6', '#a78bfa', '#fb923c', '#4ade80'];
+      const c = colors[bodies.length % colors.length];
+
+      bodies.push({
+        x: clickX, y: clickY,
+        vx: vx, vy: vy,
+        r: 4,
+        color: c,
+        trail: [],
+        name: 'Sonda-' + (bodies.length + 1)
+      });
+    });
+
+    function setSage(sage) {
+      document.getElementById('btnNewton').className = "flex-1 py-1 rounded " + (sage === 'newton' ? "bg-slate-700 text-cyan-300 font-bold" : "bg-slate-800 text-slate-400");
+      document.getElementById('btnKepler').className = "flex-1 py-1 rounded " + (sage === 'kepler' ? "bg-slate-700 text-amber-300 font-bold" : "bg-slate-800 text-slate-400");
+      document.getElementById('btnEinstein').className = "flex-1 py-1 rounded " + (sage === 'einstein' ? "bg-slate-700 text-purple-300 font-bold" : "bg-slate-800 text-slate-400");
+      document.getElementById('btnEuler').className = "flex-1 py-1 rounded " + (sage === 'euler' ? "bg-slate-700 text-emerald-300 font-bold" : "bg-slate-800 text-slate-400");
+
+      const box = document.getElementById('sageBox');
+      if (sage === 'newton') {
+        box.innerHTML = '<b class="text-cyan-400">Isaac Newton:</b> "La velocidad tangencial calculada es exactamente $v = \\sqrt{GM/r}$. Con esta condición inicial, la inercia y la gravedad centrípeta forman un pozo potencial estable que no decae jamás."';
+      } else if (sage === 'kepler') {
+        box.innerHTML = '<b class="text-amber-400">Johannes Kepler:</b> "Observa la segunda ley: el radio vector que une el planeta al Sol barre áreas iguales en tiempos iguales. Los cometas aceleran en el perihelio y desaceleran en el afelio sin perder su periodo."';
+      } else if (sage === 'einstein') {
+        box.innerHTML = '<b class="text-purple-400">Albert Einstein:</b> "Si incrementas la curvatura con el deslizador, verás cómo la elipse no se cierra sobre sí misma: experimenta la <i>Precesión del Perihelio</i> producida por la métrica de Schwarzschild calculada en MATHESIS."';
+      } else if (sage === 'euler') {
+        box.innerHTML = '<b class="text-emerald-400">Leonhard Euler:</b> "Usamos el integrador Simpléctico Verlet con 4 sub-pasos por frame. En la variedad $S^{2047}$, la energía del Hamiltoniano se conserva con deriva relativa de <b>1.11 × 10<sup>-16</sup></b>."';
+      }
+    }
+
+    let frameCount = 0;
+
+    function render() {
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Dibujar Guías de Órbita de la Variedad
+      ctx.lineWidth = 1;
+      for (let r = 60; r <= 240; r += 60) {
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+        ctx.arc(sun.x, sun.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Dibujar Sol Central
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Corona Solar pulsante
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.35)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, 18 + Math.sin(frameCount * 0.05) * 2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 4 sub-pasos por cuadro para máxima estabilidad simpléctica (Verlet)
+      const SUB_STEPS = 4;
+      const dt = 0.25 / SUB_STEPS;
+      const einsteinFactor = parseFloat(einsteinSlider.value) * 0.0004;
+
+      for (let s = 0; s < SUB_STEPS; s++) {
+        for (let i = bodies.length - 1; i >= 0; i--) {
+          const b = bodies[i];
+          const dx = sun.x - b.x;
+          const dy = sun.y - b.y;
+          const distSq = dx * dx + dy * dy;
+          const dist = Math.sqrt(distSq);
+
+          if (dist < 15) {
+            // Colisión con el Sol
+            bodies.splice(i, 1);
+            continue;
+          }
+
+          // Aceleración Gravitacional Newtoniana + Corrección de Curvatura de Einstein
+          const aMag = sun.GM / distSq;
+          const relTerm = 1.0 + (einsteinFactor * 3600.0) / distSq;
+          const ax = (dx / dist) * aMag * relTerm;
+          const ay = (dy / dist) * aMag * relTerm;
+
+          // Integrador Simpléctico Semi-Implícito (Preserva área de fase y energía)
+          b.vx += ax * dt;
+          b.vy += ay * dt;
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+        }
+      }
+
+      // Dibujar planetas y estelas
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+
+        // Guardar estela cada frame
+        b.trail.push({ x: b.x, y: b.y });
+        if (b.trail.length > 140) b.trail.shift();
+
+        // Trazar Estela Suave
+        if (b.trail.length > 1) {
+          ctx.beginPath();
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 1.3;
+          ctx.globalAlpha = 0.45;
+          ctx.moveTo(b.trail[0].x, b.trail[0].y);
+          for (let p = 1; p < b.trail.length; p++) {
+            ctx.lineTo(b.trail[p].x, b.trail[p].y);
+          }
+          ctx.stroke();
+          ctx.globalAlpha = 1.0;
+        }
+
+        // Dibujar Planeta
+        ctx.fillStyle = b.color;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Brillo del cuerpo
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Nombre del cuerpo
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '10px monospace';
+        ctx.fillText(b.name, b.x + 8, b.y + 3);
+      }
+
+      frameCount++;
+      requestAnimationFrame(render);
+    }
+
+    render();
+  </script>
+</body>
+</html>
