@@ -312,22 +312,26 @@ class PureMathesisAssembler:
             data = f.read()
 
         num_ops = len(data) // 64
-        fmt = "<BBHI III f ddd Q II"
+        fmt = "<BBHI III f ddd Q I HH"
 
         for i in range(num_ops):
             chunk = data[i*64 : (i+1)*64]
-            opcode, flags, dim, sage_mask, sa, sb, dest, dt, theta, alpha, gamma, neumaier, core, pad = struct.unpack(fmt, chunk)
+            opcode, flags, dim, sage_mask, sa, sb, dest, dt, theta, alpha, gamma, neumaier, core, agent_a, turing_t = struct.unpack(fmt, chunk)
             op_name = OPCODE_NAMES.get(opcode, f"OP_{opcode:02X}")
 
             args = [f"DEST=0x{dest:X}", f"D={dim}"]
             if opcode in (OP_ROT_LIE_SO,):
-                args.append(f"THETA={theta:.4f}")
+                args.extend([f"A=0x{sa:X}", f"B=0x{sb:X}", f"DT={dt:.4f}", f"ALPHA={alpha:.2f}", f"GAMMA={gamma:.2f}", f"THETA={theta:.4f}"])
             elif opcode in (OP_DIALECTIC_LYAPUNOV, OP_CLIFFORD_MULT, OP_PROJECT_GRASSMANN):
-                args.extend([f"A=0x{sa:X}", f"B=0x{sb:X}", f"DT={dt:.4f}", f"ALPHA={alpha:.2f}", f"GAMMA={gamma:.2f}"])
+                args.extend([f"A=0x{sa:X}", f"B=0x{sb:X}", f"DT={dt:.4f}", f"ALPHA={alpha:.2f}", f"GAMMA={gamma:.2f}", f"THETA={theta:.4f}"])
             elif opcode in (OP_LYAPUNOV_DREAM,):
                 args.extend([f"A=0x{sa:X}", f"B=0x{sb:X}", f"ALPHA={alpha:.2f}", f"GAMMA={gamma:.2f}"])
-            elif opcode in (OP_PMTP_TELEPATHY, OP_COLLAPSE_MMIO):
+            elif opcode in (OP_PMTP_TELEPATHY, OP_COLLAPSE_MMIO, OP_RETRACT_STIEFEL, OP_HALT_EQUILIBRIUM):
                 args.append(f"A=0x{sa:X}")
+
+            if agent_a > 0 or turing_t > 0:
+                args.append(f"AGENT={agent_a}")
+                args.append(f"TURING={turing_t}")
 
             line = f"{op_name}|" + "|".join(args)
             lines.append(line)

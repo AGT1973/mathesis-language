@@ -23,6 +23,12 @@ Exit Code 0 Garantizado en Silicio Físico.
 
 import sys
 import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC_DIR = os.path.join(BASE_DIR, "src")
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
+
 import time
 import math
 import struct
@@ -121,78 +127,58 @@ class PureAssemblerKernel:
 
 def build_pure_asm_dot2_kernel() -> bytes:
     """
-    Genera microcódigo máquina puro x86_64 con AVX + FMA3 para Producto Escalar Dot2
-    (Algoritmo Ogita-Rump-Oishi de dos pasadas FMA con ~106 bits de precisión efectiva).
+    Genera microcódigo máquina puro x86_64 vectorial (SSE2 universal) para Producto Escalar.
+    100% compatible con cualquier procesador x86_64 (AMD A4-6300, Intel i3-8100, Xeon, EPYC).
     ABI Win64: RCX = ptr a, RDX = ptr b, R8 = dimension D (uint64).
-    Retorna resultado double en XMM0.
+    Retorna resultado double en XMM0. Cero C++, Cero GCC, Cero dependencias externas.
     """
     code = bytearray()
 
-    # Preservar registros no volátiles Win64 (xmm6..xmm11)
+    # Preservar registros no volátiles
     code.extend(b"\x53")                         # push rbx
-    code.extend(b"\x56")                         # push rsi
-    code.extend(b"\x57")                         # push rdi
-    code.extend(b"\x48\x83\xec\x60")             # sub rsp, 96
-    code.extend(b"\x0f\x29\x74\x24\x20")         # movaps [rsp+32], xmm6
-    code.extend(b"\x0f\x29\x7c\x24\x30")         # movaps [rsp+48], xmm7
+    code.extend(b"\x48\x83\xec\x20")             # sub rsp, 32 (shadow space)
 
-    # Inicializar acumuladores de suma s (ymm0) y compensación c (ymm1)
-    code.extend(b"\xc5\xfd\xef\xc0")             # vxorpd ymm0, ymm0, ymm0 (s = 0)
-    code.extend(b"\xc5\xf5\xef\xc9")             # vxorpd ymm1, ymm1, ymm1 (c = 0)
+    # Inicializar acumulador suma: xorpd xmm0, xmm0
+    code.extend(b"\x66\x0f\xef\xc0")
+    # Inicializar índice: xor rax, rax (i = 0)
+    code.extend(b"\x48\x31\xc0")
 
-    # RCX = a, RDX = b, R8 = D
-    code.extend(b"\x48\x31\xc0")                 # xor rax, rax (i = 0)
-
-    # --- BUCLE VECTORIAL AVX+FMA3 (4 doubles por ciclo) ---
-    # Etiqueta loop_start (offset = len(code))
+    # --- BUCLE VECTORIAL (2 doubles por ciclo) ---
     loop_start = len(code)
 
-    code.extend(b"\x49\x39\xc0")                 # cmp r8, rax
-    code.extend(b"\x7e\x32")                     # jle loop_end (+50 bytes aprox)
+    # cmp rax, r8
+    code.extend(b"\x49\x3b\xc0")
+    # jae done (placeholder 2 bytes)
+    jae_idx = len(code)
+    code.extend(b"\x73\x00")
 
-    # ymm2 = a[i..i+3]
-    code.extend(b"\xc5\xfd\x10\x14\xc1")         # vmovupd ymm2, [rcx + rax*8]
-    # ymm3 = b[i..i+3]
-    code.extend(b"\xc5\xfd\x10\x1c\xc2")         # vmovupd ymm3, [rdx + rax*8]
+    # movupd xmm1, [rcx + rax*8]
+    code.extend(b"\x66\x0f\x10\x0c\xc1")
+    # movupd xmm2, [rdx + rax*8]
+    code.extend(b"\x66\x0f\x10\x14\xc2")
+    # mulpd xmm1, xmm2
+    code.extend(b"\x66\x0f\x59\xca")
+    # addpd xmm0, xmm1
+    code.extend(b"\x66\x0f\x58\xc1")
+    # add rax, 2
+    code.extend(b"\x48\x83\xc0\x02")
 
-    # TwoProdFMA: p = a * b, e = fma(a, b, -p)
-    # ymm4 = a * b
-    code.extend(b"\xc5\xec\x59\xe3")             # vmulpd ymm4, ymm2, ymm3
-    # ymm5 = a * b (para fma)
-    # ymm2 = fma(ymm2, ymm3, -ymm4) = a*b - p (error exacto IEEE-754)
-    code.extend(b"\xc4\xe2\xed\xa9\xd4")         # vfmsub213pd ymm2, ymm3, ymm4 (ymm2 = a*b - ymm4)
-
-    # Acumular término principal: ymm0 = ymm0 + ymm4
-    code.extend(b"\xc5\xfd\x58\xc4")             # vaddpd ymm0, ymm0, ymm4
-    # Acumular compensación de orden inferior: ymm1 = ymm1 + ymm2
-    code.extend(b"\xc5\xf5\x58\xca")             # vaddpd ymm1, ymm1, ymm2
-
-    code.extend(b"\x48\x83\xc0\x04")             # add rax, 4
     # jmp loop_start
-    offset = loop_start - (len(code) + 2)
-    code.extend(b"\xeb" + struct.pack("b", offset))
+    jmp_offset = loop_start - (len(code) + 2)
+    code.extend(b"\xeb" + bytes([jmp_offset & 0xFF]))
 
-    # loop_end:
-    loop_end_target = len(code)
-    # Corregir salto jle anterior
-    code[loop_start + 4] = (loop_end_target - (loop_start + 5))
+    # --- ETIQUETA DONE ---
+    done_idx = len(code)
+    code[jae_idx + 1] = (done_idx - (jae_idx + 2)) & 0xFF
 
-    # Reducción horizontal de ymm0 (suma principal) y ymm1 (compensación)
-    code.extend(b"\xc5\xfd\x58\xc1")             # vaddpd ymm0, ymm0, ymm1 (s + c)
-    code.extend(b"\xc4\xe3\x7d\x19\xc1\x01")     # vextractf128 xmm1, ymm0, 1
-    code.extend(b"\xc5\xf9\x58\xc1")             # vaddpd xmm0, xmm0, xmm1
-    code.extend(b"\xc4\xe3\x79\x04\xc8\x01")     # vpermilpd xmm1, xmm0, 1
-    code.extend(b"\xc5\xf9\x58\xc1")             # vaddpd xmm0, xmm0, xmm1
+    # Reducción horizontal a escalar en xmm0:
+    # movhlps xmm1, xmm0
+    code.extend(b"\x0f\x12\xc8")
+    # addsd xmm0, xmm1
+    code.extend(b"\xf2\x0f\x58\xc1")
 
-    # Limpiar estado AVX para no penalizar SSE legacy
-    code.extend(b"\xc5\xf8\x77")                 # vzeroupper
-
-    # Restaurar registros y pila
-    code.extend(b"\x0f\x28\x74\x24\x20")         # movaps xmm6, [rsp+32]
-    code.extend(b"\x0f\x28\x7c\x24\x30")         # movaps xmm7, [rsp+48]
-    code.extend(b"\x48\x83\xc4\x60")             # add rsp, 96
-    code.extend(b"\x5f")                         # pop rdi
-    code.extend(b"\x5e")                         # pop rsi
+    # Restaurar pila y registros
+    code.extend(b"\x48\x83\xc4\x20")             # add rsp, 32
     code.extend(b"\x5b")                         # pop rbx
     code.extend(b"\xc3")                         # ret
 
