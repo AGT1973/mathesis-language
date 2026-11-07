@@ -1,0 +1,26 @@
+# ==============================================================================
+# CALTECH HSS (Computational Economics & Game Theory)
+# Equilibrio dinamico de oferta y demanda en variedad continua multidimensional.
+# Elimina los ciclos especulativos caoticos por atraccion a punto fijo de Nash.
+# ==============================================================================
+
+# Paso 1: Vector continuo de liquidez y flujos de capital (Slab 0x1000)
+ROT_LIE_SO|DEST=0x1000|D=2048|THETA=0.0500|SAGES=LEIBNIZ
+
+# Paso 2: Vector continuo de expectativas de inflacion y tasas (Slab 0x2000)
+ROT_LIE_SO|DEST=0x2000|D=2048|THETA=0.0800|SAGES=TURING
+
+# Paso 3: Proyeccion ortogonal sobre el subespacio de insolvencia cero (Grassmann)
+PROJECT_GRASSMANN|DEST=0x3000|A=0x1000|B=0x2000|D=2048
+
+# Paso 4: Ajuste dinamico de precios hacia el pozo de equilibrio de Lyapunov
+DIALECTIC_LYAPUNOV|DEST=0x4000|A=0x3000|B=0x1000|D=2048|DT=0.0100|ALPHA=2.50|GAMMA=0.10|SAGES=LEIBNIZ+TURING
+
+# Paso 5: Consolidacion de precios en memoria continua (Sleep-Time Relaxation)
+LYAPUNOV_DREAM|DEST=0x4000|A=0x4000|B=0x1000|D=2048|ALPHA=0.90|GAMMA=0.05
+
+# Paso 6: Colapso transitorio a indicador de riesgo de mercado
+COLLAPSE_MMIO|DEST=0x0000|A=0x4000|D=2048
+
+# Paso 7: Fin del ajuste de mercado con arbitraje cero
+HALT_EQUILIBRIUM|DEST=0x4000|D=2048

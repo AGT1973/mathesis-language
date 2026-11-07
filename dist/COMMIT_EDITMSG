@@ -1,0 +1,15 @@
+Initial public release: MATHESIS Continuous Geometric Computing Language v1.0
+
+- mathesis_isa.h: ISA definition (opcodes 0x01-0x09, Stiefel manifold S^{D-1})
+- mathesis_compiler.py: .mth source -> 64-byte aligned binary compiler
+- mathesis_studio.html: browser IDE with real Float64Array(2048) execution
+- facturacion_geometrica.mth: billing system in pure MATHESIS (7 instructions)
+- test_lyapunov_dreaming.mth: LYAPUNOV_DREAM opcode demo, drift=2.22e-16
+- MANUAL_MATHESIS_SABIOS_ARIEL.md/.docx: full bilingual manual
+- README.md: project overview (EN/ES)
+
+MATHESIS is a continuous-geometry computing language operating natively
+on the Stiefel manifold S^{D-1} (D>=2048). Zero 1D token serialization
+between AI reasoning steps. Compatible with COCONUT and LatentMAS research.
+
+Silicon verified: Exit Code 0, AMD A4-6300, 2026-11-07

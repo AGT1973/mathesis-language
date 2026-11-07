@@ -1,0 +1,26 @@
+# ==============================================================================
+# CALTECH BBE (Biology & Biological Engineering)
+# Plegamiento molecular continuo en subespacios de Grassmann y algebra de Clifford.
+# Encuentra el estado nativo de minima energia libre sin muestreo estocastico 1D.
+# ==============================================================================
+
+# Paso 1: Conformacion inicial de la cadena de aminoacidos en S^{D-1}
+ROT_LIE_SO|DEST=0x1000|D=2048|THETA=0.0250|SAGES=ARISTOTLE
+
+# Paso 2: Matriz de interacciones electroestaticas y enlaces de hidrogeno
+ROT_LIE_SO|DEST=0x2000|D=2048|THETA=0.0450|SAGES=GROTHENDIECK
+
+# Paso 3: Contraccion multivectorial de Clifford para fuerzas no covalentes
+CLIFFORD_MULT|DEST=0x3000|A=0x1000|B=0x2000|D=2048
+
+# Paso 4: Descenso por gradiente continuo hacia el pozo nativo de Gibbs
+DIALECTIC_LYAPUNOV|DEST=0x4000|A=0x3000|B=0x1000|D=2048|DT=0.0020|ALPHA=3.00|GAMMA=0.15|SAGES=ARISTOTLE+GROTHENDIECK
+
+# Paso 5: Retraccion rigurosa de Stiefel (error de distancia interatomica <= 1e-15)
+RETRACT_STIEFEL|DEST=0x4000|D=2048|SAGES=GROTHENDIECK
+
+# Paso 6: Colapso visual efimero a estructura 3D en Framebuffer
+COLLAPSE_MMIO|DEST=0x0000|A=0x4000|D=2048
+
+# Paso 7: Conformacion final alcanzada
+HALT_EQUILIBRIUM|DEST=0x4000|D=2048

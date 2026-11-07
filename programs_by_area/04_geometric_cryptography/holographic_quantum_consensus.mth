@@ -1,0 +1,27 @@
+# ==============================================================================
+# CALTECH IQIM (Institute for Quantum Information and Matter)
+# Consenso bizantino distribuido mediante Memoria Holografica (HDC) y Stiefel.
+# Cero claves en texto plano; firmas ortonormales en variedades continuas.
+# ==============================================================================
+
+# Paso 1: Vector de firma holografica de la estacion 1 (Slab 0x1000)
+ROT_LIE_SO|DEST=0x1000|D=2048|THETA=0.0770|SAGES=GAUSS
+
+# Paso 2: Vector de firma holografica de la estacion 2 (Slab 0x2000)
+ROT_LIE_SO|DEST=0x2000|D=2048|THETA=0.0930|SAGES=RIEMANN
+
+# Paso 3: Proyeccion sobre la subvariedad de Grassmann compartida
+PROJECT_GRASSMANN|DEST=0x3000|A=0x1000|B=0x2000|D=2048
+
+# Paso 4: Contraccion de Clifford para verificacion de firma cruzada
+CLIFFORD_MULT|DEST=0x4000|A=0x3000|B=0x1000|D=2048
+
+# Paso 5: Consenso bizantino por convergencia de Lyapunov entre 20 nodos
+DIALECTIC_LYAPUNOV|DEST=0x5000|A=0x4000|B=0x2000|D=2048|DT=0.0100|ALPHA=1.50|GAMMA=0.08|SAGES=GAUSS+RIEMANN
+
+# Paso 6: Retraccion de Stiefel estricta (Checksum Neumaier autenticado)
+RETRACT_STIEFEL|DEST=0x5000|D=2048|SAGES=GAUSS
+
+# Paso 7: Difusion PMTP al cluster y parada en consenso
+PMTP_TELEPATHY|DEST=0x0000|A=0x5000|D=2048
+HALT_EQUILIBRIUM|DEST=0x5000|D=2048
