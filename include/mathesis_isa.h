@@ -24,7 +24,8 @@ struct MathesisInstruction64 {
     double    damping_gamma;   // Offset 0x28: Coeficiente de amortiguamiento disipativo
     uint64_t  neumaier_chk;    // Offset 0x30: Checksum IEEE-754 de norma Neumaier
     uint32_t  target_core;     // Offset 0x38: Núcleo físico asignado (Core 1 Tensorial)
-    uint32_t  padding_stride;  // Offset 0x3C: Alineación a línea de caché de 64 bytes
+    uint16_t  agent_a;         // Offset 0x3C: Cantidad mínima de agentes/sabios obligados (1..8)
+    uint16_t  turing_t;        // Offset 0x3E: Vueltas o ciclos de relajación de Turing/Lyapunov (1..100)
 };
 
 #pragma pack(pop)

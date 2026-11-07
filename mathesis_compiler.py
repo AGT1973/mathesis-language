@@ -44,9 +44,9 @@ SAGE_MASKS = {
 # uint8 opcode, uint8 flags, uint16 dim_d, uint32 sage_mask (8B)
 # uint32 slab_a, uint32 slab_b, uint32 dest_slab, float lyapunov_dt (16B)
 # double lie_theta, double potential_alpha, double damping_gamma (24B)
-# uint64 neumaier_chk, uint32 target_core, uint32 padding (16B)
-# TOTAL = 64 Bytes.
-INSTRUCTION_FORMAT = "<BBHI III f ddd QII"
+# uint64 neumaier_chk, uint32 target_core, uint16 agent_a, uint16 turing_t (16B)
+# TOTAL = 64 Bytes exactos alineados a cache-line.
+INSTRUCTION_FORMAT = "<BBHI III f ddd Q I HH"
 assert struct.calcsize(INSTRUCTION_FORMAT) == 64, f"Struct size must be 64 bytes, got {struct.calcsize(INSTRUCTION_FORMAT)}"
 
 REVERSE_OPCODES = {v: k for k, v in OPCODES.items()}
@@ -74,7 +74,8 @@ class MathesisInstruction:
         self.damping_gamma = 0.05
         self.neumaier_chk = 0
         self.target_core = 1
-        self.padding = 0
+        self.agent_a = 2
+        self.turing_t = 10
 
     def to_binary(self) -> bytes:
         return struct.pack(
@@ -92,16 +93,18 @@ class MathesisInstruction:
             self.damping_gamma,
             self.neumaier_chk,
             self.target_core,
-            self.padding
+            self.agent_a,
+            self.turing_t
         )
 
     def to_canonical_text(self) -> str:
-        """Formato canonico auditado por Perplexity para LLMs."""
+        """Formato canonico auditado por Perplexity para LLMs con A y T."""
         sages_str = "+".join([k for k, v in SAGE_MASKS.items() if (self.sage_mask & v)]) or "NONE"
         return (f"{self.opcode_name}|DEST=0x{self.dest_slab:X}|D={self.dim_d}|"
                 f"A=0x{self.source_slab_a:X}|B=0x{self.source_slab_b:X}|"
                 f"DT={self.lyapunov_dt:.4f}|ALPHA={self.potential_alpha:.2f}|"
                 f"GAMMA={self.damping_gamma:.2f}|THETA={self.lie_theta:.4f}|"
+                f"AGENT={self.agent_a}|TURING={self.turing_t}|"
                 f"SAGES={sages_str}")
 
 def parse_slab_id(val_str: str) -> int:
@@ -145,6 +148,10 @@ def parse_mathesis_line(line: str) -> MathesisInstruction:
                 inst.damping_gamma = float(v)
             elif k in ("THETA", "LIE"):
                 inst.lie_theta = float(v)
+            elif k in ("AGENT", "AGENTS", "A"):
+                inst.agent_a = int(v)
+            elif k in ("TURING", "TURNING", "ROUNDS", "STEPS", "T"):
+                inst.turing_t = int(v)
             elif k in ("SAGES", "COUNCIL"):
                 mask = 0
                 for sage in v.split("+"):
