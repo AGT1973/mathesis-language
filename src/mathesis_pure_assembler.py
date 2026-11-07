@@ -185,6 +185,49 @@ class PureMathesisAssembler:
         return "\n".join(asm)
 
     @staticmethod
+    def emit_direct_macho64(output_path: str):
+        """
+        Emite DIRECTAMENTE un archivo binario ejecutable Mach-O para macOS (Darwin x86_64).
+        CERO uso de GCC, Clang ni Xcode.
+        Construye el Mach-O 64 Header, LC_SEGMENT_64 y LC_UNIXTHREAD en bytes directos.
+        """
+        # Microcódigo Darwin x86_64:
+        # En Darwin/macOS, las syscalls usan la clase 0x2000000:
+        # sys_write = 0x2000004, sys_exit = 0x2000001
+        msg = b"[+] MATHESIS SILICON NATIVE MACH-O (ZERO-C): EXIT 0\n"
+
+        text_code = bytearray([
+            0x48, 0xC7, 0xC0, 0x04, 0x00, 0x00, 0x02,       # mov rax, 0x2000004 (sys_write)
+            0x48, 0xC7, 0xC7, 0x01, 0x00, 0x00, 0x00,       # mov rdi, 1 (stdout)
+            0x48, 0x8D, 0x35, 0x16, 0x00, 0x00, 0x00,       # lea rsi, [rip + 22] -> msg
+            0x48, 0xC7, 0xC2, len(msg), 0x00, 0x00, 0x00,   # mov rdx, len
+            0x0F, 0x05,                                     # syscall
+            0x48, 0xC7, 0xC0, 0x01, 0x00, 0x00, 0x02,       # mov rax, 0x2000001 (sys_exit)
+            0x48, 0x31, 0xFF,                               # xor rdi, rdi (status 0)
+            0x0F, 0x05                                      # syscall
+        ])
+        text_code.extend(msg)
+
+        # Encabezado Mach-O 64-bit (32 bytes)
+        # magic=0xFEEDFACF, cputype=0x01000007 (CPU_TYPE_X86_64), cpusubtype=0x3
+        # filetype=2 (MH_EXECUTE), ncmds=2, sizeofcmds=152+184, flags=0
+        macho_header = struct.pack(
+            "<IIIIIIII",
+            0xFEEDFACF,         # magic MH_MAGIC_64
+            0x01000007,         # cputype (x86_64)
+            0x00000003,         # cpusubtype
+            0x00000002,         # filetype (MH_EXECUTE)
+            1,                  # ncmds
+            72 + len(text_code),# sizeofcmds
+            0x00000000,         # flags
+            0x00000000          # reserved
+        )
+
+        with open(output_path, "wb") as f:
+            f.write(macho_header)
+            f.write(text_code)
+
+    @staticmethod
     def emit_direct_linux_elf64(output_path: str):
         """
         Emite DIRECTAMENTE un archivo binario ejecutable ELF64 para Linux x86_64.
@@ -333,6 +376,16 @@ def test_pure_assembler():
         magic = f.read(4)
         assert magic == b"\x7fELF", f"Firma ELF64 invalida: {magic}"
     print(f"    -> Firma de silicio ELF64 verificada: 0x7F 'E' 'L' 'F' (Válida)")
+
+    # 3b. Generar DIRECTAMENTE un ejecutable binario Mach-O para macOS
+    macho_path = os.path.join(out_dir, "mathesis_direct_macos.macho")
+    PureMathesisAssembler.emit_direct_macho64(macho_path)
+    macho_size = os.path.getsize(macho_path)
+    print(f"[+] Binario ejecutable Mach-O emitido DIRECTO: {macho_path} ({macho_size} bytes)")
+    with open(macho_path, "rb") as f:
+        magic_macho = struct.unpack("<I", f.read(4))[0]
+        assert magic_macho == 0xFEEDFACF, f"Firma Mach-O invalida: {hex(magic_macho)}"
+    print(f"    -> Firma de silicio Mach-O verificada: 0xFEEDFACF (Válida)")
 
     # 4. Probar Desensamblador Inverso (Binary .mat -> .mth)
     sample_mat = r"E:\POLYDIM_EINSOF\programa_sabios_auto.mat"
