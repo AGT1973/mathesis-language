@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.env
+
+# Binary artifacts (keep .mat source, exclude compiled exes)
+*.exe
+*.obj
+*.o
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Secrets
+*.key
+*.pem
+*.secret
