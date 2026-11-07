@@ -1,0 +1,56 @@
+[
+  {
+    "id": "qwen3.8-27b-ft-202611011910-cd3a",
+    "name": "Bailian Qwen3.8 27B FT Sovereign",
+    "category": "finetuned",
+    "dim_d": 2048,
+    "platform": "Alibaba Bailian Cloud GPU",
+    "description": "Modelo Fine-Tuned para Stiefel S^{2047} y Álgebra Geométrica de Einsof",
+    "date_added": "2026-11-01"
+  },
+  {
+    "id": "einsof-deepseek-r1-v2",
+    "name": "Einsof DeepSeek-R1 Stiefel v2.0",
+    "category": "einsof_stiefel",
+    "dim_d": 3584,
+    "platform": "PmtpShmBus Shared Memory",
+    "description": "Agente Vectorial Stiefel v2.0 (d=3584->2048) con Razonamiento Formal",
+    "date_added": "2026-11-05"
+  },
+  {
+    "id": "einsof-qwen2.5-v2",
+    "name": "Einsof Qwen 2.5 Stiefel v2.0",
+    "category": "einsof_stiefel",
+    "dim_d": 1536,
+    "platform": "PmtpShmBus Shared Memory",
+    "description": "Agente Vectorial Stiefel v2.0 (d=1536->1536) Síntesis de Código ISA",
+    "date_added": "2026-11-05"
+  },
+  {
+    "id": "einsof-llama3-v2",
+    "name": "Einsof LLaMA-3 Stiefel v2.0",
+    "category": "einsof_stiefel",
+    "dim_d": 4096,
+    "platform": "PmtpShmBus Shared Memory",
+    "description": "Alineación de Subespacios Grassmann v2.0 (d=4096->2048)",
+    "date_added": "2026-11-05"
+  },
+  {
+    "id": "einsof-gemma2-v2",
+    "name": "Einsof Gemma-2 Stiefel v2.0",
+    "category": "einsof_stiefel",
+    "dim_d": 3584,
+    "platform": "PmtpShmBus Shared Memory",
+    "description": "Verificación Relacional Gromov-Wasserstein v2.0 (d=3584->2048)",
+    "date_added": "2026-11-05"
+  },
+  {
+    "id": "test-qwen-ft-checkpoint-v1",
+    "name": "Test Qwen Stiefel Checkpoint",
+    "category": "finetuned",
+    "dim_d": 2048,
+    "platform": "Bailian Fine-Tuning Cloud",
+    "description": "Checkpoint de prueba para validacion de API",
+    "date_added": "2026-11-07"
+  }
+]
