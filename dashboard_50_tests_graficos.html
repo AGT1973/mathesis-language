@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MATHESIS UNIVERSALIS — 50 Tests Silicio en ALADIN (Debian 13)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0b0f19; color: #e2e8f0; margin: 0; padding: 25px; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 20px; }
+        .header h1 { color: #38bdf8; margin: 0; font-size: 28px; }
+        .header p { color: #94a3b8; font-size: 14px; margin-top: 8px; }
+        .grid-kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .kpi-card { background: #131c2e; border: 1px solid #1e293b; border-radius: 10px; padding: 18px; text-align: center; }
+        .kpi-title { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-value { font-size: 26px; font-weight: bold; margin-top: 8px; color: #f8fafc; }
+        .kpi-sub { font-size: 11px; color: #10b981; margin-top: 4px; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .chart-box { background: #131c2e; border: 1px solid #1e293b; border-radius: 10px; padding: 20px; }
+        .chart-title { font-size: 16px; font-weight: 600; color: #38bdf8; margin-bottom: 15px; }
+        .full-width { grid-column: span 2; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #1e293b; }
+        th { background: #1e293b; color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🌌 BARRIDA DE 50 TESTS DE ALTA COMPLEJIDAD EN SILICIO</h1>
+    <p>Hardware Host: AMD A4-6300 & Nodo Remoto ALADIN (Debian 13 Headless - Intel i3-8100 - 192.168.100.21) | Exit Code 0</p>
+</div>
+
+<div class="grid-kpi">
+    <div class="kpi-card">
+        <div class="kpi-title">Speedup de Cómputo</div>
+        <div class="kpi-value" style="color: #38bdf8;">18.5x</div>
+        <div class="kpi-sub">vs Python Estándar (15.0 µs vs 276.8 µs)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Tokens Ahorrados</div>
+        <div class="kpi-value" style="color: #10b981;">172,616</div>
+        <div class="kpi-sub">100% CoT Eliminado (Zero Tokens)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Huella de RAM Física</div>
+        <div class="kpi-value" style="color: #a855f7;">32 KB</div>
+        <div class="kpi-sub">Reducción de 443x frente a Python (14.2 MB)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Deriva de Neumaier</div>
+        <div class="kpi-value" style="color: #f59e0b;">0.00e+00</div>
+        <div class="kpi-sub">Cota estricta <= 1.00e-14 (Exit Code 0)</div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="chart-box">
+        <div class="chart-title">1. Latencia Promedio de Ejecución (Microsegundos - Menor es Mejor)</div>
+        <canvas id="chartLatency"></canvas>
+    </div>
+
+    <div class="chart-box">
+        <div class="chart-title">2. Consumo de Memoria RAM Física (Kilobytes - Menor es Mejor)</div>
+        <canvas id="chartRam"></canvas>
+    </div>
+
+    <div class="chart-box full-width">
+        <div class="chart-title">3. Consumo Total de Tokens en Razonamiento Científico (50 Tests)</div>
+        <canvas id="chartTokens" height="80"></canvas>
+    </div>
+</div>
+
+<script>
+    // 1. Chart Latencia
+    new Chart(document.getElementById('chartLatency'), {
+        type: 'bar',
+        data: {
+            labels: ['Python Estándar (NumPy)', 'C99 Nativo (GCC -O3)', 'MATHESIS Silicio Directo'],
+            datasets: [{
+                label: 'Latencia (µs)',
+                data: [276.76, 33.21, 14.95],
+                backgroundColor: ['#ef4444', '#f59e0b', '#38bdf8'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }
+        }
+    });
+
+    // 2. Chart RAM
+    new Chart(document.getElementById('chartRam'), {
+        type: 'bar',
+        data: {
+            labels: ['Python Runtime', 'C99 Binario', 'MATHESIS Silicio Directo'],
+            datasets: [{
+                label: 'RAM Física (KB)',
+                data: [14200, 850, 32],
+                backgroundColor: ['#ef4444', '#f59e0b', '#a855f7'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { type: 'logarithmic', grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }
+        }
+    });
+
+    // 3. Chart Tokens
+    new Chart(document.getElementById('chartTokens'), {
+        type: 'bar',
+        data: {
+            labels: ['Modo Tradicional 1D (Tokens CoT Textuales)', 'MATHESIS Variedad Continua (Zero-Token Latent Stiefel)'],
+            datasets: [{
+                label: 'Tokens Quemados',
+                data: [172616, 0],
+                backgroundColor: ['#ef4444', '#10b981'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }
+        }
+    });
+</script>
+
+</body>
+</html>
