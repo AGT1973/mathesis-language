@@ -370,6 +370,21 @@ int main(void) {
         f.write(c_code)
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        in_file = sys.argv[1]
+        bin_out = sys.argv[2] if len(sys.argv) > 2 else os.path.splitext(in_file)[0] + ".mat"
+        c_out = sys.argv[3] if len(sys.argv) > 3 else os.path.splitext(in_file)[0] + "_portable.c"
+        with open(in_file, "r", encoding="utf-8") as f:
+            src_text = f.read()
+        print(f"[*] Compilando fuente MATHESIS desde: {in_file}")
+        insts = compile_mathesis_source(src_text)
+        print(f"[+] {len(insts)} instrucciones compiladas exitosamente.")
+        emit_binary(insts, bin_out)
+        emit_c99_portable(insts, c_out)
+        print(f"[+] Binario de silicio emitido: {bin_out} ({os.path.getsize(bin_out)} bytes)")
+        print(f"[+] C99 ANSI Portable emitido: {c_out} ({os.path.getsize(c_out)} bytes)")
+        sys.exit(0)
+
     test_src = """
 # Programa Maestro de Consenso Dialectico en MATHESIS
 # Formato dual: tanto canonico tipo Perplexity como funcional

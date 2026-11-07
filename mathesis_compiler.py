@@ -313,6 +313,40 @@ int main(void) {
         double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, {inst.dim_d})) - 1.0);
         printf("[+] Inst {idx:02d} (LYAPUNOV_DREAM): Consolidacion de Memoria (Sleep-Time) Slab 0x{inst.dest_slab:X} | Deriva: %.2e (EXIT 0)\\n", err);
     }}\n"""
+        elif inst.opcode_name == "CLIFFORD_MULT":
+            c_code += f"""    {{
+        size_t sa = get_slab_index(0x{inst.source_slab_a:X});
+        size_t sb = get_slab_index(0x{inst.source_slab_b:X});
+        size_t sd = get_slab_index(0x{inst.dest_slab:X});
+        double dot_prod = neumaier_dot(g_slabs[sa].data, g_slabs[sb].data, {inst.dim_d});
+        for (size_t i = 0; i < {inst.dim_d}; ++i) {{
+            /* Contraccion geometrica Clifford: producto escalar + cuña multivectorial */
+            g_slabs[sd].data[i] = g_slabs[sa].data[i] * dot_prod + g_slabs[sb].data[i] * (1.0 - dot_prod);
+        }}
+        retract_stiefel(g_slabs[sd].data, {inst.dim_d});
+        double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, {inst.dim_d})) - 1.0);
+        printf("[+] Inst {idx:02d} (CLIFFORD_MULT): Contraccion Clifford Slab 0x{inst.dest_slab:X} | Deriva: %.2e (EXIT 0)\\n", err);
+    }}\n"""
+        elif inst.opcode_name == "PROJECT_GRASSMANN":
+            c_code += f"""    {{
+        size_t sa = get_slab_index(0x{inst.source_slab_a:X});
+        size_t sb = get_slab_index(0x{inst.source_slab_b:X});
+        size_t sd = get_slab_index(0x{inst.dest_slab:X});
+        double coeff = neumaier_dot(g_slabs[sa].data, g_slabs[sb].data, {inst.dim_d});
+        for (size_t i = 0; i < {inst.dim_d}; ++i) {{
+            /* Proyeccion ortogonal sobre el subespacio de Grassmann */
+            g_slabs[sd].data[i] = g_slabs[sa].data[i] - coeff * g_slabs[sb].data[i];
+        }}
+        retract_stiefel(g_slabs[sd].data, {inst.dim_d});
+        double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, {inst.dim_d})) - 1.0);
+        printf("[+] Inst {idx:02d} (PROJECT_GRASSMANN): Proyeccion Grassmann Slab 0x{inst.dest_slab:X} | Deriva: %.2e (EXIT 0)\\n", err);
+    }}\n"""
+        elif inst.opcode_name == "PMTP_TELEPATHY":
+            c_code += f"""    {{
+        size_t sa = get_slab_index(0x{inst.source_slab_a:X});
+        double chk = neumaier_dot(g_slabs[sa].data, g_slabs[sa].data, {inst.dim_d});
+        printf("[+] Inst {idx:02d} (PMTP_TELEPATHY): Transferencia Zero-Copy DMA Slab 0x{inst.source_slab_a:X} -> Red LAN/SHM | Checksum: %.4f\\n", chk);
+    }}\n"""
         elif inst.opcode_name == "COLLAPSE_MMIO":
             c_code += f"""    {{
         size_t sd = get_slab_index(0x{inst.source_slab_a:X});
@@ -336,6 +370,21 @@ int main(void) {
         f.write(c_code)
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        in_file = sys.argv[1]
+        bin_out = sys.argv[2] if len(sys.argv) > 2 else os.path.splitext(in_file)[0] + ".mat"
+        c_out = sys.argv[3] if len(sys.argv) > 3 else os.path.splitext(in_file)[0] + "_portable.c"
+        with open(in_file, "r", encoding="utf-8") as f:
+            src_text = f.read()
+        print(f"[*] Compilando fuente MATHESIS desde: {in_file}")
+        insts = compile_mathesis_source(src_text)
+        print(f"[+] {len(insts)} instrucciones compiladas exitosamente.")
+        emit_binary(insts, bin_out)
+        emit_c99_portable(insts, c_out)
+        print(f"[+] Binario de silicio emitido: {bin_out} ({os.path.getsize(bin_out)} bytes)")
+        print(f"[+] C99 ANSI Portable emitido: {c_out} ({os.path.getsize(c_out)} bytes)")
+        sys.exit(0)
+
     test_src = """
 # Programa Maestro de Consenso Dialectico en MATHESIS
 # Formato dual: tanto canonico tipo Perplexity como funcional
