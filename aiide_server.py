@@ -93,6 +93,14 @@ PROJECTS_REGISTRY = [
         "description": "Repositorio maestro de investigación y teoremas SOTA",
         "default_agent_a": 7,
         "default_turing_t": 50
+    },
+    {
+        "id": "sovereign_mth",
+        "name": "MATHESIS Soberano (Versión Paralela)",
+        "root": r"E:\MATHESIS\sovereign_runtime",
+        "description": "Versión paralela soberana 100% en silicio directo (Zero CPython/GCC)",
+        "default_agent_a": 3,
+        "default_turing_t": 12
     }
 ]
 
@@ -121,6 +129,11 @@ DEFAULT_PROJECT_AGENTS = {
     "polydim_einsof": [
         {"id": "ag_tribunal", "name": "Tribunal Pleno de Sabios", "role": "Consenso dialéctico de 7 Sabios", "sages": ["Aristóteles", "Leibniz", "Euler", "Gauss", "Riemann", "Poincaré", "Turing"], "prompt": "Deliberación mayor y certificación de teoremas en silicio."},
         {"id": "ag_stiefel", "name": "Auditor de Retracción Polar", "role": "Preservación estricta de X^T X = I_k", "sages": ["Gauss", "Riemann"], "prompt": "Controla deriva <= 10^-15 mediante Neumaier."}
+    ],
+    "sovereign_mth": [
+        {"id": "ag_swarm_architect", "name": "Arquitecto de Enjambre Stiefel", "role": "Orquestación continua en S^{2047}", "sages": ["Euler", "Leibniz"], "prompt": "Modela el acoplamiento Lie SO(D) y rotaciones multidimensionales."},
+        {"id": "ag_neumaier_guard", "name": "Guardián de Silicio Neumaier", "role": "Verificación y compensación numérica", "sages": ["Turing", "Gauss"], "prompt": "Garantiza deriva relativa <= 1e-15 y comprobación de punto fijo."},
+        {"id": "ag_aladin_link", "name": "Enlace PMTP ALADIN", "role": "Telepatía y mapeo de Slabs sin 1D", "sages": ["Riemann", "Poincaré"], "prompt": "Sincroniza estados de memoria viva con el nodo 192.168.100.21."}
     ]
 }
 
