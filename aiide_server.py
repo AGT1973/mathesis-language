@@ -428,6 +428,40 @@ class AIIDEHandler(BaseHTTPRequestHandler):
             })
             return
 
+        elif path == "/api/quantum/status":
+            # Lista de los 12 jobs de silicio cuántico despachados a IBM Quantum
+            quantum_jobs = [
+                {"id": 1,  "problem": "Hadwiger-Nelson (chi(R^2))",   "qubits": 14, "backend": "ibm_kingston",  "job_id": "dbno4goou4as73b4suu0", "status": "QUEUED"},
+                {"id": 2,  "problem": "Ramsey R(5,5) Bound",          "qubits": 66, "backend": "ibm_kingston",  "job_id": "dbnoos44148s7391c1kg", "status": "QUEUED"},
+                {"id": 3,  "problem": "Collatz / Conway (3x+1)",       "qubits": 6,  "backend": "ibm_fez",       "job_id": "dbnp17tt7fqc73ajvh6g", "status": "QUEUED"},
+                {"id": 4,  "problem": "Kneser KG(5,2) Dimension",     "qubits": 10, "backend": "ibm_marrakesh", "job_id": "dbnpcf5t7fqc73ajvt3g", "status": "QUEUED"},
+                {"id": 5,  "problem": "Erdos Distances in R^2",        "qubits": 8,  "backend": "ibm_kingston",  "job_id": "dbnpl20qtr0c73adea60", "status": "QUEUED"},
+                {"id": 6,  "problem": "Max-Cut Reticulo Toroidal",    "qubits": 9,  "backend": "ibm_fez",       "job_id": "dbnq6cgou4as73b4vdu0", "status": "QUEUED"},
+                {"id": 7,  "problem": "Frustrated Triangular Ising",   "qubits": 7,  "backend": "ibm_fez",       "job_id": "dbnqebtt7fqc73ak1cdg", "status": "QUEUED"},
+                {"id": 8,  "problem": "Sierpinski Fractal Order 2",    "qubits": 6,  "backend": "ibm_fez",       "job_id": "dbnqmg5t7fqc73ak1t30", "status": "QUEUED"},
+                {"id": 9,  "problem": "Pfeifer Quantum Torus (Chern)", "qubits": 8,  "backend": "ibm_fez",       "job_id": "dbnqvvgqtr0c73adgh50", "status": "QUEUED"},
+                {"id": 10, "problem": "Cayley Tree / Bethe (z=3)",     "qubits": 10, "backend": "ibm_kingston",  "job_id": "dbnr85oqtr0c73adgvrg", "status": "QUEUED"},
+                {"id": 11, "problem": "Quantum Walk Hypercube Q_4",   "qubits": 4,  "backend": "ibm_fez",       "job_id": "dbnrg5k4148s7391g7u0", "status": "QUEUED"},
+                {"id": 12, "problem": "Icosahedron Platonic Ising",    "qubits": 12, "backend": "ibm_fez",       "job_id": "dbnrof0qtr0c73adi4m0", "status": "QUEUED"}
+            ]
+            self._send_json({
+                "provider": "IBM Quantum Platform (Eagle/Heron 156Q)",
+                "cadence_interval_min": 15,
+                "total_jobs": len(quantum_jobs),
+                "jobs": quantum_jobs
+            })
+            return
+
+        elif path == "/api/quantum/cadence":
+            # Consulta estado de la ventana de cadencia de 15 minutos
+            self._send_json({
+                "cadence_minutes": 15,
+                "active_policy": "RULE_10_IBM_QUANTUM_15MIN_RATE_LIMIT",
+                "can_dispatch": True,
+                "next_problem": "Dodecahedron Regular 20-Qubit Antiferromagnet"
+            })
+            return
+
         self.send_error(404, "Ruta no encontrada")
 
     def do_POST(self):

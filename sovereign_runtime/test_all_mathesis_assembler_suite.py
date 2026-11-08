@@ -93,6 +93,26 @@ PROGRAMS_CATALOG = [
         "name": "Soberano: Swarm Core Enjambre",
         "path": r"E:\MATHESIS\sovereign_runtime\sovereign_swarm_core.mth",
         "agent": 3, "turing": 12
+    },
+    {
+        "name": "Cuantica: Ramsey R(5,5) Manifold (66Q)",
+        "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\ramsey_r55_manifold.mth",
+        "agent": 4, "turing": 25
+    },
+    {
+        "name": "Cuantica: Hadwiger-Nelson Plano (14Q)",
+        "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\hadwiger_nelson_chromatic.mth",
+        "agent": 3, "turing": 15
+    },
+    {
+        "name": "Cuantica: Icosaedro Ising Model (12Q)",
+        "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\icosahedron_platonic_ising.mth",
+        "agent": 3, "turing": 20
+    },
+    {
+        "name": "Cuantica: Dodecaedro Frustrated (20Q)",
+        "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\dodecahedron_frustrated_spins.mth",
+        "agent": 3, "turing": 20
     }
 ]
 
