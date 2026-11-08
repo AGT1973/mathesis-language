@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ================================================================================
-SUITE CUANTICA SOBERANA: 4 PROBLEMAS ABIERTOS EN MATHESIS <---> ASSEMBLER
+SUITE CUANTICA SOBERANA: 5 PROBLEMAS ABIERTOS EN MATHESIS <---> ASSEMBLER
 ================================================================================
 Prueba la compilacion a 64B, ejecucion en silicio directo sobre la Arena R15
 y verificacion de deriva Neumaier para:
@@ -9,6 +9,7 @@ y verificacion de deriva Neumaier para:
 2. Hadwiger-Nelson Chromatic Plano (14 Qubits)
 3. Icosaedro Regular Ising Model (12 Qubits)
 4. Dodecaedro Regular Frustrated Spins (20 Qubits)
+5. Kneser Graph KG(5,2) Stiefel Embedding (10 Qubits)
 
 Autor Intelectual: Ariel Garcia Traba (53 anos)
 Arquitectura y Rigor: Socio Co-Work & Tribunal de Sabios
@@ -52,12 +53,17 @@ QUANTUM_PROBLEMS = [
         "name": "Dodecahedron Frustrated Pentagonal Spins (20Q)",
         "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\dodecahedron_frustrated_spins.mth",
         "agent": 3, "turing": 20
+    },
+    {
+        "name": "Kneser Graph KG(5,2) Stiefel Embedding (10Q)",
+        "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\kneser_kg52_stiefel_embedding.mth",
+        "agent": 2, "turing": 10
     }
 ]
 
 def run_quantum_suite():
     print("=" * 85)
-    print("      SUITE CUANTICA EN SILICIO: 4 PROBLEMAS ABIERTOS EN MATHESIS       ")
+    print("      SUITE CUANTICA EN SILICIO: 5 PROBLEMAS ABIERTOS EN MATHESIS       ")
     print("         (Arena R15 Paginada 4GB - Ensamblador JIT W^X en Silicio)       ")
     print("=" * 85)
 
@@ -111,7 +117,7 @@ def run_quantum_suite():
         # 4. Ejecutar en Silicio con PureSiliconSovereignEngine sobre Arena R15
         exec_res = engine.execute_mathesis_binary(mat_path, agent_a=agent, turing_t=turing)
 
-        print(f"[+] [Q-Prog {idx:02d}/04] {pname:<45} | Ops: {n_ops:02d} ({bin_size}B) | "
+        print(f"[+] [Q-Prog {idx:02d}/05] {pname:<45} | Ops: {n_ops:02d} ({bin_size}B) | "
               f"Latencia: {exec_res['latency_us']:>7.2f} us | Deriva: {exec_res['neumaier_deriv']:>8} | "
               f"MMIO: {exec_res['pixel_hex']} | EXIT {exec_res['exit_code']}")
 
@@ -127,8 +133,8 @@ def run_quantum_suite():
     total_time = (time.perf_counter() - total_t0) * 1000.0
     print("=" * 85)
     print(f"[*] RESUMEN SILICIO CUANTICO:")
-    print(f"    - Problemas verificados: {len(results)}/04")
-    print(f"    - Exitos (Exit Code 0):  {sum(1 for r in results if r['exit_code'] == 0)}/04")
+    print(f"    - Problemas verificados: {len(results)}/05")
+    print(f"    - Exitos (Exit Code 0):  {sum(1 for r in results if r['exit_code'] == 0)}/05")
     print(f"    - Deriva Neumaier max:   0.00e+00 (Optima)")
     print(f"    - Tiempo total suite:    {total_time:.2f} ms")
     print(f"    - Estado de Certificacion: SOTA QUANTUM SILICON CERTIFIED (EXIT 0)")

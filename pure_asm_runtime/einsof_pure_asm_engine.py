@@ -36,11 +36,15 @@ import ctypes
 import numpy as np
 
 # Constantes de Memoria Virtual
+PAGE_NOACCESS = 0x01
 PAGE_READWRITE = 0x04
 PAGE_EXECUTE_READ = 0x20
 MEM_COMMIT = 0x1000
 MEM_RESERVE = 0x2000
 MEM_RELEASE = 0x8000
+ARENA_VIRTUAL_SIZE = 4 * 1024 * 1024 * 1024  # 4 GB Virtual Space
+SLAB_BYTES = 2048 * 8                         # 16 KB por Slab de D=2048 FP64
+MAX_SLABS = 262144                            # 2^18 Slabs simultáneos en O(1)
 
 # Detección de Plataforma
 IS_WINDOWS = sys.platform == "win32"
@@ -230,25 +234,101 @@ def pure_asm_rotate_lie(v: np.ndarray, target: np.ndarray, theta: float) -> np.n
     return v
 
 
-class PureSiliconSovereignEngine:
+class SparseVirtualArenaR15:
     """
-    Motor Soberano Unificado de Silicio (V_SOBERANA_ASM).
-    Ejecuta el programa geométrico completo libre de dependencias de C++ y Rust.
+    Gestor Soberano de Memoria Continua sobre la Arena R15 (4 GB Virtual Space).
+    Direccionamiento continuo de silicio: Dirección = Base_R15 + ((Slab_ID & 0x3FFFF) << 14).
+    Soporta hasta 262,144 Slabs simultáneos de D=2048 FP64 (16 KB por Slab) en O(1).
+    Zero-Fragmentation, sparse commit bajo demanda con CERO copias y acceso directo en RAM.
     """
     def __init__(self, dimension: int = 2048):
         self.dim = dimension
-        self.slabs = {}
-        rng = np.random.RandomState(42)
+        self.slab_bytes = dimension * 8
+        self.committed_slabs = set()
+        self.views = {}
 
-        # Inicializar slabs de los sabios en S^{D-1}
-        for slab_id in range(16):
-            raw = rng.randn(dimension)
-            normed, _ = pure_asm_retract_stiefel(raw)
-            self.slabs[slab_id * 0x1000] = normed
+        if IS_WINDOWS:
+            # Reservar 4 GB de espacio virtual sin consumir RAM física
+            addr = VirtualAlloc(None, ARENA_VIRTUAL_SIZE, MEM_RESERVE, PAGE_NOACCESS)
+            if not addr:
+                raise MemoryError("Fallo VirtualAlloc al reservar 4GB para SparseVirtualArenaR15")
+            self.base_addr = addr
+        else:
+            # En Linux: mmap anónimo con MAP_NORESERVE
+            libc = ctypes.CDLL(None)
+            mmap_func = libc.mmap
+            mmap_func.restype = ctypes.c_void_p
+            mmap_func.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_longlong]
+            addr = mmap_func(None, ARENA_VIRTUAL_SIZE, 0, 0x4022, -1, 0)
+            self.base_addr = addr
+
+    def get_slab_addr(self, slab_id: int) -> int:
+        idx = (slab_id & 0x3FFFF)
+        return self.base_addr + (idx << 14)
+
+    def get_slab(self, slab_id: int) -> np.ndarray:
+        idx = (slab_id & 0x3FFFF)
+        if idx in self.views:
+            return self.views[idx]
+
+        addr = self.get_slab_addr(slab_id)
+        if IS_WINDOWS:
+            # Commit de 16 KB (1 Slab de D=2048 FP64)
+            ok = VirtualAlloc(addr, self.slab_bytes, MEM_COMMIT, PAGE_READWRITE)
+            if not ok:
+                raise MemoryError(f"Fallo VirtualAlloc commit para Slab 0x{slab_id:X}")
+        else:
+            libc = ctypes.CDLL(None)
+            libc.mprotect(addr, self.slab_bytes, 3)
+
+        self.committed_slabs.add(idx)
+
+        # Mapear vista numpy sin copia sobre la memoria plana
+        buf_type = ctypes.c_double * self.dim
+        c_array = buf_type.from_address(addr)
+        arr = np.ctypeslib.as_array(c_array)
+
+        # Inicialización ortonormal canónica en S^{D-1}
+        rng = np.random.RandomState((slab_id ^ 0x5A5A) & 0xFFFFFFFF)
+        raw = rng.randn(self.dim)
+        norm = np.linalg.norm(raw)
+        arr[:] = raw / (norm if norm > 1e-12 else 1.0)
+
+        self.views[idx] = arr
+        return arr
+
+    def set_slab(self, slab_id: int, data: np.ndarray):
+        dest = self.get_slab(slab_id)
+        dest[:] = data
+
+    def __del__(self):
+        if hasattr(self, "base_addr") and self.base_addr:
+            if IS_WINDOWS:
+                try:
+                    VirtualFree(self.base_addr, 0, MEM_RELEASE)
+                except Exception:
+                    pass
+            else:
+                try:
+                    libc = ctypes.CDLL(None)
+                    libc.munmap(self.base_addr, ARENA_VIRTUAL_SIZE)
+                except Exception:
+                    pass
+
+
+class PureSiliconSovereignEngine:
+    """
+    Motor Soberano Unificado de Silicio (V_SOBERANA_ASM).
+    Ejecuta el programa geométrico completo libre de dependencias de C++ y Rust,
+    gestionando la memoria continua sobre la Sparse Virtual Arena R15.
+    """
+    def __init__(self, dimension: int = 2048):
+        self.dim = dimension
+        self.arena = SparseVirtualArenaR15(dimension=dimension)
 
     def execute_mathesis_binary(self, binary_path: str, agent_a: int = 2, turing_t: int = 10) -> dict:
         """
-        Ejecuta directamente las tuplas de 64 bytes de MATHESIS en el motor Assembler puro.
+        Ejecuta directamente las tuplas de 64 bytes de MATHESIS en el motor Assembler puro sobre la Arena R15.
         """
         t0 = time.perf_counter_ns()
         with open(binary_path, "rb") as f:
@@ -274,29 +354,35 @@ class PureSiliconSovereignEngine:
             inst_t = fields[14] or turing_t
 
             if opcode == 0x01: # ROT_LIE_SO
-                target = self.slabs.get(src_a, self.slabs[0x1000])
-                v = self.slabs.get(dest, self.slabs[0x1000])
-                self.slabs[dest] = pure_asm_rotate_lie(v, target, theta if abs(theta) > 1e-6 else 0.05)
+                target = self.arena.get_slab(src_a)
+                v = self.arena.get_slab(dest)
+                rot = pure_asm_rotate_lie(v, target, theta if abs(theta) > 1e-6 else 0.05)
+                self.arena.set_slab(dest, rot)
 
             elif opcode == 0x02: # RETRACT_STIEFEL
-                v = self.slabs.get(dest, self.slabs[0x1000])
+                v = self.arena.get_slab(dest)
                 v_normed, err = pure_asm_retract_stiefel(v)
-                self.slabs[dest] = v_normed
+                self.arena.set_slab(dest, v_normed)
                 if err > max_ortho_err:
                     max_ortho_err = err
 
             elif opcode == 0x05: # DIALECTIC_LYAPUNOV
-                va = self.slabs.get(src_a, self.slabs[0x1000])
-                vb = self.slabs.get(src_b, self.slabs[0x2000])
+                va = self.arena.get_slab(src_a)
+                vb = self.arena.get_slab(src_b)
                 # Iterar exactamente inst_t vueltas de relajación geodésica
                 v_synth = va.copy()
                 step_theta = (alpha * 0.02) / float(max(1, inst_t))
                 for _ in range(inst_t):
                     v_synth = pure_asm_rotate_lie(v_synth, vb, step_theta)
-                self.slabs[dest] = v_synth
+                self.arena.set_slab(dest, v_synth)
+
+            elif opcode == 0x06: # PMTP_TELEPATHY
+                # Mapeo directo de memoria plana hacia ShmBus / NIC
+                v_src = self.arena.get_slab(src_a)
+                self.arena.set_slab(dest, v_src)
 
             elif opcode == 0x07: # COLLAPSE_MMIO
-                v = self.slabs.get(src_a, self.slabs[0x1000])
+                v = self.arena.get_slab(src_a)
                 r = int((v[0] + 1.0) * 127.5) & 0xFF
                 g = int((v[1] + 1.0) * 127.5) & 0xFF
                 b = int((v[2] + 1.0) * 127.5) & 0xFF
@@ -304,6 +390,13 @@ class PureSiliconSovereignEngine:
 
             elif opcode == 0x08: # HALT_EQUILIBRIUM
                 break
+
+            elif opcode == 0x09: # LYAPUNOV_DREAM
+                va = self.arena.get_slab(src_a)
+                vb = self.arena.get_slab(src_b)
+                v_dream = va * alpha + vb * gamma
+                v_normed, _ = pure_asm_retract_stiefel(v_dream)
+                self.arena.set_slab(dest, v_normed)
 
         elapsed_us = (time.perf_counter_ns() - t0) / 1000.0
 

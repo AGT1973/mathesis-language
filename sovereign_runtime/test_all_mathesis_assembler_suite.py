@@ -113,6 +113,11 @@ PROGRAMS_CATALOG = [
         "name": "Cuantica: Dodecaedro Frustrated (20Q)",
         "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\dodecahedron_frustrated_spins.mth",
         "agent": 3, "turing": 20
+    },
+    {
+        "name": "Cuantica: Kneser Graph KG(5,2) (10Q)",
+        "path": r"E:\MATHESIS\programs_by_area\06_quantum_open_problems\kneser_kg52_stiefel_embedding.mth",
+        "agent": 2, "turing": 10
     }
 ]
 
