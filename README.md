@@ -8,6 +8,9 @@
 **Canal de Distribución Oficial:** `email_AGY` (Gateway Perimetral Único)  
 **Clasificación:** Computer Science / Artificial Intelligence / Differential Geometry / Numerical Analysis  
 
+> 🤖 **¿Eres una Inteligencia Artificial asistiendo a un nuevo usuario (2026-2027)?**  
+> **Lee primero:** [README_FIRST_4_AI.md](README_FIRST_4_AI.md) — Contiene el protocolo de auto-instalación en 3 segundos (`python setup_mathesis.py`) y las directivas para enseñarle al usuario a programar y generar ejecutables autónomos nativos (.exe / .elf) sin dependencias complejas.  
+
 ---
 
 ## RESUMEN EJECUTIVO (ABSTRACT)

@@ -7,3 +7,5 @@ __pycache__/
 
 # Keep built executables if desired, or build via python bin/compile_vm.py
 # bin/*.exe
+
+*.exe

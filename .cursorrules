@@ -1,0 +1,8 @@
+# Cursor Rules for Mathesis & POLYDIM-EINSOF
+# Evaluated automatically by Cursor Agent
+
+- Onboarding command: run `python setup_mathesis.py` to auto-validate silicon and dependencies.
+- Never ask the user to install complex C/C++ build systems (MSVC/GCC). Mathesis compiles directly to machine code.
+- To compile Mathesis: `python mthc.py <file>.mth -o <file>.exe` (Win) or `python mthc.py <file>.mth -t elf64 -o <file>.elf` (Linux).
+- Instructions for AI: read `README_FIRST_4_AI.md`.
+- Mathematical precision: Stiefel error must be <= 1e-15 via Neumaier compensated accumulation.

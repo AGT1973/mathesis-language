@@ -1,0 +1,11 @@
+# ==============================================================================
+# TEST DE SILICIO: COLLAPSE_1D_MMIO & OPERADOR SIMPLECTICO U(K) (LEMA 5.1)
+# Compilador: MTHC v1.4+ (Emisión Directa x86_64 PE32+ / ELF64)
+# Autor Intelectual: Ariel García Traba - Rigor: Gandalf
+# ==============================================================================
+
+ROT_LIE_SO|DEST=0x1000|D=2048|SAGES=EULER
+SYMPLECTIC_COVARIANT_UK|DEST=0x2000|A=0x1000|D=2048|THETA=0.125|SAGES=POINCARE
+RETRACT_STIEFEL|DEST=0x2000|D=2048
+COLLAPSE_1D_MMIO|DEST=0x0000|A=0x2000|D=2048
+HALT_EQUILIBRIUM|DEST=0x2000|D=2048
