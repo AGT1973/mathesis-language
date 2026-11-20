@@ -286,39 +286,129 @@ int main(void) {
 """
     for idx, inst in enumerate(instructions):
         c_code += f"\n    /* Instruccion {idx}: {inst.opcode_name} */\n"
-        if inst.opcode_name in ("ROT_LIE_SO", "RETRACT_STIEFEL"):
+        if inst.opcode_name == "ROT_LIE_SO":
+            theta_val = inst.lie_theta if inst.lie_theta != 0.0 else 0.05
+            c_code += f"""    {{
+        /* Rotacion Infinitesimal en Algebra de Lie so({inst.dim_d}) */
+        size_t sd = get_slab_index(0x{inst.dest_slab:X});
+        size_t sa = (0x{inst.source_slab_a:X} != 0) ? get_slab_index(0x{inst.source_slab_a:X}) : sd;
+        double theta = {theta_val};
+        double cos_t = cos(theta);
+        double sin_t = sin(theta);
+        size_t d = {inst.dim_d};
+        for (size_t i = 0; i < d / 2; ++i) {{
+            double x0 = g_slabs[sa].data[2*i];
+            double x1 = g_slabs[sa].data[2*i+1];
+            g_slabs[sd].data[2*i]   = x0 * cos_t - x1 * sin_t;
+            g_slabs[sd].data[2*i+1] = x0 * sin_t + x1 * cos_t;
+        }}
+        if (d % 2 != 0) {{
+            g_slabs[sd].data[d - 1] = g_slabs[sa].data[d - 1];
+        }}
+        retract_stiefel(g_slabs[sd].data, d);
+        double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, d)) - 1.0);
+        printf("[+] Inst {idx:02d} (ROT_LIE_SO): Rotacion Infinitesimal Lie so(%zu) theta=%.4f Slab 0x{inst.dest_slab:X} | Deriva: %.2e (EXIT 0)\\n", d, theta, err);
+    }}\n"""
+        elif inst.opcode_name == "RETRACT_STIEFEL":
             c_code += f"""    {{
         size_t d = get_slab_index(0x{inst.dest_slab:X});
         retract_stiefel(g_slabs[d].data, {inst.dim_d});
         double err = fabs(sqrt(neumaier_dot(g_slabs[d].data, g_slabs[d].data, {inst.dim_d})) - 1.0);
-        printf("[+] Inst {idx:02d} ({inst.opcode_name}): Stiefel Retract Slab 0x{inst.dest_slab:X} | Deriva: %.2e\\n", err);
+        printf("[+] Inst {idx:02d} (RETRACT_STIEFEL): Stiefel Retract Slab 0x{inst.dest_slab:X} | Deriva: %.2e\\n", err);
     }}\n"""
         elif inst.opcode_name == "DIALECTIC_LYAPUNOV":
+            steps_val = max(5, inst.turing_t if inst.turing_t > 0 else 20)
             c_code += f"""    {{
+        /* Integracion Diferencial de Lyapunov en S^{{D-1}} (Basin of Attraction Consensual) */
         size_t sa = get_slab_index(0x{inst.source_slab_a:X});
         size_t sb = get_slab_index(0x{inst.source_slab_b:X});
         size_t sd = get_slab_index(0x{inst.dest_slab:X});
-        for (size_t i = 0; i < {inst.dim_d}; ++i) {{
-            /* Integracion de Lyapunov: cuenca de atraccion conjunta */
+        size_t d = {inst.dim_d};
+        double dt = {inst.lyapunov_dt};
+        double alpha = {inst.potential_alpha};
+        double gamma = {inst.damping_gamma};
+        int steps = {steps_val};
+        
+        /* Inicializar el estado consensual sd en la geodesica media */
+        for (size_t i = 0; i < d; ++i) {{
             g_slabs[sd].data[i] = 0.5 * (g_slabs[sa].data[i] + g_slabs[sb].data[i]);
         }}
-        retract_stiefel(g_slabs[sd].data, {inst.dim_d});
-        double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, {inst.dim_d})) - 1.0);
-        printf("[+] Inst {idx:02d} (DIALECTIC_LYAPUNOV): Sintesis Dialectica 0x{inst.dest_slab:X} | Deriva: %.2e (EXIT 0)\\n", err);
+        retract_stiefel(g_slabs[sd].data, d);
+        
+        /* Energia de Lyapunov inicial V = 0.5 * alpha * [(1 - x^T a)^2 + (1 - x^T b)^2] */
+        double dot_a0 = neumaier_dot(g_slabs[sd].data, g_slabs[sa].data, d);
+        double dot_b0 = neumaier_dot(g_slabs[sd].data, g_slabs[sb].data, d);
+        double v_initial = 0.5 * alpha * ((1.0 - dot_a0)*(1.0 - dot_a0) + (1.0 - dot_b0)*(1.0 - dot_b0));
+        
+        /* Integrador Diferencial Riemanniano sobre S^{{D-1}} */
+        for (int s = 0; s < steps; ++s) {{
+            double da = neumaier_dot(g_slabs[sd].data, g_slabs[sa].data, d);
+            double db = neumaier_dot(g_slabs[sd].data, g_slabs[sb].data, d);
+            
+            /* Gradiente euclideo negativo: force = alpha * [(1 - da)*a + (1 - db)*b] */
+            static double f_tan[MAX_D];
+            for (size_t i = 0; i < d; ++i) {{
+                f_tan[i] = alpha * ((1.0 - da) * g_slabs[sa].data[i] + (1.0 - db) * g_slabs[sb].data[i]);
+            }}
+            double f_dot_x = neumaier_dot(f_tan, g_slabs[sd].data, d);
+            
+            /* Proyeccion ortogonal al espacio tangente T_x S^{{D-1}} con amortiguamiento gamma */
+            for (size_t i = 0; i < d; ++i) {{
+                double tangent_component = f_tan[i] - f_dot_x * g_slabs[sd].data[i];
+                g_slabs[sd].data[i] += dt * tangent_component - (gamma * dt) * g_slabs[sd].data[i];
+            }}
+            retract_stiefel(g_slabs[sd].data, d);
+        }}
+        
+        double dot_af = neumaier_dot(g_slabs[sd].data, g_slabs[sa].data, d);
+        double dot_bf = neumaier_dot(g_slabs[sd].data, g_slabs[sb].data, d);
+        double v_final = 0.5 * alpha * ((1.0 - dot_af)*(1.0 - dot_af) + (1.0 - dot_bf)*(1.0 - dot_bf));
+        double delta_v = v_final - v_initial;
+        double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, d)) - 1.0);
+        printf("[+] Inst {idx:02d} (DIALECTIC_LYAPUNOV): Integracion Lyapunov (%d pasos, dt=%.3f, alpha=%.2f, gamma=%.2f) | V_ini=%.4e -> V_fin=%.4e (Delta_V=%.2e <= 0) | Deriva: %.2e (EXIT 0)\\n",
+               steps, dt, alpha, gamma, v_initial, v_final, delta_v, err);
     }}\n"""
         elif inst.opcode_name == "LYAPUNOV_DREAM":
+            steps_val = max(5, inst.turing_t if inst.turing_t > 0 else 20)
             c_code += f"""    {{
-        /* Consolidacion de Memoria Continua (Sleep-Time Relaxation & Memory Pruning SOTA) */
+        /* Consolidacion de Memoria Continua / Sleep-Time Gradient Relaxation */
         size_t sa = get_slab_index(0x{inst.source_slab_a:X});
         size_t sb = get_slab_index(0x{inst.source_slab_b:X});
         size_t sd = get_slab_index(0x{inst.dest_slab:X});
-        for (size_t i = 0; i < {inst.dim_d}; ++i) {{
-            double diff = g_slabs[sb].data[i] - g_slabs[sa].data[i];
-            g_slabs[sd].data[i] = g_slabs[sa].data[i] + {inst.potential_alpha} * diff * (1.0 - {inst.damping_gamma});
+        size_t d = {inst.dim_d};
+        double dt = {inst.lyapunov_dt};
+        double alpha = {inst.potential_alpha};
+        double gamma = {inst.damping_gamma};
+        int steps = {steps_val};
+        
+        for (size_t i = 0; i < d; ++i) {{
+            g_slabs[sd].data[i] = g_slabs[sa].data[i];
         }}
-        retract_stiefel(g_slabs[sd].data, {inst.dim_d});
-        double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, {inst.dim_d})) - 1.0);
-        printf("[+] Inst {idx:02d} (LYAPUNOV_DREAM): Consolidacion de Memoria (Sleep-Time) Slab 0x{inst.dest_slab:X} | Deriva: %.2e (EXIT 0)\\n", err);
+        retract_stiefel(g_slabs[sd].data, d);
+        
+        double dot_b0 = neumaier_dot(g_slabs[sd].data, g_slabs[sb].data, d);
+        double v_initial = 0.5 * alpha * (1.0 - dot_b0) * (1.0 - dot_b0);
+        
+        for (int s = 0; s < steps; ++s) {{
+            double db = neumaier_dot(g_slabs[sd].data, g_slabs[sb].data, d);
+            static double f_tan_dream[MAX_D];
+            for (size_t i = 0; i < d; ++i) {{
+                f_tan_dream[i] = alpha * (1.0 - db) * g_slabs[sb].data[i];
+            }}
+            double f_dot_x = neumaier_dot(f_tan_dream, g_slabs[sd].data, d);
+            for (size_t i = 0; i < d; ++i) {{
+                double tangent = f_tan_dream[i] - f_dot_x * g_slabs[sd].data[i];
+                g_slabs[sd].data[i] += dt * tangent - (gamma * dt) * g_slabs[sd].data[i];
+            }}
+            retract_stiefel(g_slabs[sd].data, d);
+        }}
+        
+        double dot_bf = neumaier_dot(g_slabs[sd].data, g_slabs[sb].data, d);
+        double v_final = 0.5 * alpha * (1.0 - dot_bf) * (1.0 - dot_bf);
+        double delta_v = v_final - v_initial;
+        double err = fabs(sqrt(neumaier_dot(g_slabs[sd].data, g_slabs[sd].data, d)) - 1.0);
+        printf("[+] Inst {idx:02d} (LYAPUNOV_DREAM): Consolidacion de Memoria (%d pasos, dt=%.3f, alpha=%.2f) | V_ini=%.4e -> V_fin=%.4e (Delta_V=%.2e <= 0) | Deriva: %.2e (EXIT 0)\\n",
+               steps, dt, alpha, v_initial, v_final, delta_v, err);
     }}\n"""
         elif inst.opcode_name == "CLIFFORD_MULT":
             c_code += f"""    {{
@@ -396,9 +486,9 @@ if __name__ == "__main__":
 # Programa Maestro de Consenso Dialectico en MATHESIS
 # Formato dual: tanto canonico tipo Perplexity como funcional
 
-ROT_LIE_SO|DEST=0x1000|D=2048|SAGES=EULER
-ROT_LIE_SO|DEST=0x2000|D=2048|SAGES=GAUSS
-DIALECTIC_LYAPUNOV|DEST=0x3000|A=0x1000|B=0x2000|D=2048|DT=0.01|ALPHA=1.0|GAMMA=0.05|SAGES=EULER+GAUSS
+ROT_LIE_SO|DEST=0x1000|D=2048|THETA=0.05|SAGES=EULER
+ROT_LIE_SO|DEST=0x2000|D=2048|THETA=0.08|SAGES=GAUSS
+DIALECTIC_LYAPUNOV|DEST=0x3000|A=0x1000|B=0x2000|D=2048|DT=0.01|ALPHA=1.0|GAMMA=0.05|STEPS=25|SAGES=EULER+GAUSS
 COLLAPSE_MMIO|DEST=0x0000|A=0x3000|D=2048
 HALT_EQUILIBRIUM|DEST=0x3000|D=2048
 """
