@@ -41,8 +41,20 @@ enum class MathesisOpcode : uint8_t {
     DIALECTIC_LYAPUNOV = 0x05,  // Resolución de contradicción entre Sabios
     PMTP_TELEPATHY     = 0x06,  // Transporte zero-copy por memoria compartida
     COLLAPSE_MMIO      = 0x07,  // Colapso efímero a 16.6 ms hacia Video Framebuffer
-    HALT_EQUILIBRIUM   = 0x08   // Convergencia geodésica alcanzada (Punto Fijo)
+    HALT_EQUILIBRIUM   = 0x08,  // Convergencia geodésica alcanzada (Punto Fijo)
+    LYAPUNOV_DREAM     = 0x09,  // Consolidación de memoria continua (Sleep-Time Relaxation en Stiefel)
+    TANGENT_PROJECTION = 0x0A   // Proyección Tangente Stiefel S^{D-1}: Pi_q(g) = g - q * (q^T g)
 };
+
+// Proyección Tangente sobre el espacio tangente T_q S^{D-1} de la Variedad de Stiefel
+// Ecuación derivada por Kimi K3.1 y DeepSeek V4.1: \Pi_q(g) = g - q * (q^T g)
+// Garantiza matemáticamente que (d/dt)(q^T q) = 0 antes de cualquier paso disipativo.
+inline void mathesis_tangent_projection(const double* q, const double* g, double* out_tangent_g, size_t n) {
+    double lambda = mathesis_neumaier_dot(q, g, n); // q^T g compensado Neumaier
+    for (size_t i = 0; i < n; ++i) {
+        out_tangent_g[i] = g[i] - lambda * q[i];
+    }
+}
 
 // Acumulador compensado de Neumaier para garantizar deriva ortonormal <= 1e-15 en silicio
 inline double mathesis_neumaier_dot(const double* a, const double* b, size_t n) {
